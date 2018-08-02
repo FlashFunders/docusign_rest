@@ -1090,21 +1090,12 @@ module DocusignRest
     #
     # Returns the response (success or failure).
     def void_envelope(options = {})
-      content_type = { 'Content-Type' => 'application/json' }
-      content_type.merge(options[:headers]) if options[:headers]
-
       post_body = {
           "status" =>"voided",
           "voidedReason" => options[:voided_reason] || "No reason provided."
-      }.to_json
+      }
 
-      uri = build_uri("/accounts/#{acct_id}/envelopes/#{options[:envelope_id]}")
-
-      http = initialize_net_http_ssl(uri)
-      request = Net::HTTP::Put.new(uri.request_uri, headers(content_type))
-      request.body = post_body
-      response = http.request(request)
-      response
+      json_put("/accounts/#{acct_id}/envelopes/#{options[:envelope_id]}", post_body, options)
     end
 
     private
@@ -1144,6 +1135,20 @@ module DocusignRest
 
       request = Net::HTTP::Post.new(uri.request_uri, headers(content_type))
       request.body = body.to_json if body
+      request_with_logging(http, request, uri, body)
+    end
+
+    def json_put(path, body, raw_headers={})
+      content_type = { 'Content-Type' => 'application/json' }
+      content_type.merge!(raw_headers) if raw_headers
+
+      uri = build_uri(path)
+
+      http = initialize_net_http_ssl(uri)
+
+      request = Net::HTTP::Put.new(uri.request_uri, headers(content_type))
+      request.body = body.to_json if body
+
       request_with_logging(http, request, uri, body)
     end
 
